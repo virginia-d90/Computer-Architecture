@@ -7,7 +7,19 @@ class CPU:
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.ram = [0] * 256 #ram that holds 256 bytes of memory
+        self.reg = [0] * 8 #8 general purpose registers
+        self.pc = 0 #pc counter
+        #set initial value of stack pointer --- possibly not now
+        
+
+    def ram_read(self, MAR):
+        #MAR: Memory Address Register aka the address being read  
+        return self.ram[MAR]
+    
+    def ram_write(self, MDR, MAR):
+        #MDR: Memory Data Register aka the value at the MAR
+        self.ram[MAR] = MDR
 
     def load(self):
         """Load a program into memory."""
@@ -62,4 +74,33 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        pass
+        #This uses the set of instructions LDI, HLT, PRN...etc
+        #probably need a running state to make instructions execute
+        #add local IR variable hold result from PC
+        #get operand_a and operand_b from ram using ram_read()
+        HLT = 0b00000001
+        LDI = 0b10000010
+        PRN = 0b01000111
+        
+        running = True
+
+        while running:
+            IR = self.ram_read(self.pc) #Instruction Register. stores the memory result that is stored in register PC
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+
+            #if HLT
+            if IR == HLT:
+                self.running = False #end the run
+                return
+
+            #if LDI
+            elif IR == LDI: #set specified register to specified value
+                self.reg[operand_a] = operand_b
+                self.pc += 3 #increment to find next instruction
+
+            #if PRN
+            elif IR == PRN: #prints the specified value at a register
+                print(self.reg[operand_a])
+                self.pc += 2 #increment to find next instruction
+        

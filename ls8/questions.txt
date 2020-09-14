@@ -1,0 +1,11 @@
+TODO:
+0[*]inventory of what is here
+1[*]add constructor to cpu.py
+2[*]add RAM funcitons ram_read() ram_write()
+3[]implement core of CPU run() method
+4[]implement HLT instrucion handler
+5[]add LDI instruction
+6[]add PRN instruction
+
+
+not really sure what the iiii and rrrr will do?

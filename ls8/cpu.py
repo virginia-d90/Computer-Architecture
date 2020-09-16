@@ -24,24 +24,49 @@ class CPU:
     def load(self):
         """Load a program into memory."""
 
-        address = 0
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010, # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111, # PRN R0
+        #     0b00000000,
+        #     0b00000001, # HLT
+        # ]
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
+        if len(sys.argv) != 2:
+            print("Insufficient arguments, re-evaluate and try again")
+            sys.exit(1)
 
+        try:
+            address = 0
+
+            with open(sys.argv[1]) as file:
+                for line in file:
+                    comment_split = line.split('#')
+                    potential_num = comment_split[0].strip()
+
+                    if potential_num == "":
+                        continue
+
+                    try:
+                        potential_num = int(potential_num, 2)
+                    except ValueError:
+                        print(f"Invalid number '{potential_num}''")
+                        sys.exit(1)
+
+                    self.ram[address] = potential_num
+                    address += 1
+
+        except FileNotFoundError:
+            print(f"{sys.argv[0]}: {sys.argv[1]} not found")
+            sys.exit(2)
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -49,6 +74,8 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -81,6 +108,7 @@ class CPU:
         HLT = 0b00000001
         LDI = 0b10000010
         PRN = 0b01000111
+        MUL = 0b10100010
         
         running = True
 
@@ -91,9 +119,9 @@ class CPU:
 
             #if HLT
             if IR == HLT:
-                self.running = False #end the run
-                return
-
+                running = False #end the run
+                
+            
             #if LDI
             elif IR == LDI: #set specified register to specified value
                 self.reg[operand_a] = operand_b
@@ -103,4 +131,9 @@ class CPU:
             elif IR == PRN: #prints the specified value at a register
                 print(self.reg[operand_a])
                 self.pc += 2 #increment to find next instruction
+
+            elif IR == MUL:
+                #multiply the operands calling the operation from alu
+                self.alu('MUL', operand_a, operand_b)
+                self.pc +=3
         

@@ -12,6 +12,7 @@ class CPU:
         self.pc = 0 #pc counter
         #set initial value of stack pointer 
         self.sp = 7
+        self.fl = 0b00000000 #flags
         
 
     def ram_read(self, MAR):
@@ -77,6 +78,18 @@ class CPU:
         #elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+
+        elif op == "CMP":
+            if self.reg[reg_a] == self.reg[reg_b]: #reg are equal so E flag set to 1
+                self.fl = 0b00000001
+
+            elif self.reg[reg_a] < self.reg[reg_b]: #less than flag set to 1
+                self.fl = 0b00000100
+
+            elif self.reg[reg_a] > self.reg[reg_b]: #greater than flag set to 1
+                self.fl = 0b00000010
+
+           
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -106,16 +119,22 @@ class CPU:
         #probably need a running state to make instructions execute
         #add local IR variable hold result from PC
         #get operand_a and operand_b from ram using ram_read()
-        HLT = 0b00000001
-        LDI = 0b10000010
-        PRN = 0b01000111
-        ADD = 0b10100000
+        HLT = 0b00000001 #Halts the cpu
+        LDI = 0b10000010 #sets value of a register
+        PRN = 0b01000111 #prints value of a register
+        ADD = 0b10100000 
         MUL = 0b10100010
-        PUSH = 0b01000101
-        POP = 0b01000110
+        PUSH = 0b01000101 #push value of register to stack
+        POP = 0b01000110 #pop value at top of stack into register
         CALL = 0b01010000
         RET = 0b00010001
-        
+        CMP = 0b10100111 #compare values in 2 registers
+        JNE  = 0b01010110
+        JEQ = 0b01010101
+        JMP = 0b01010100
+        E = 0b00000001 #equal flag
+        L = 0b00000100 #less than flag
+        G = 0b00000010 #greater than flag
         running = True
 
         while running:
@@ -182,6 +201,35 @@ class CPU:
                 self.reg[self.sp] += 1
                 # store in the PC
                 self.pc = return_address
+            
+            elif IR == CMP:
+                self.alu("CMP", operand_a, operand_b)
+                self.pc += 3
+
+            elif IR == JMP: #set PC to address stored in the given register
+                reg_to_jump = operand_a
+                addr_to_jump = self.reg[reg_to_jump]
+                self.pc = addr_to_jump
+
+            elif IR == JEQ:#if equal flag is 1 jump to address stored in given register
+                reg_to_jump = operand_a
+                addr_to_jump = self.reg[reg_to_jump]
+
+                if self.fl == E:
+                    self.pc = addr_to_jump
+                else:
+                    self.pc += 2
+
+            elif IR == JNE:#if flag is not equal jump to address stored in given register
+                reg_to_jump = operand_a
+                addr_to_jump = self.reg[reg_to_jump]
+
+                if self.fl == L or self.fl == G:
+                    self.pc = addr_to_jump
+                else:
+                    self.pc += 2
+
+            
             else:
                 print(
                     F" unknown instruction {IR} at address {self.pc}")

@@ -10,7 +10,8 @@ class CPU:
         self.ram = [0] * 256 #ram that holds 256 bytes of memory
         self.reg = [0] * 8 #8 general purpose registers
         self.pc = 0 #pc counter
-        #set initial value of stack pointer --- possibly not now
+        #set initial value of stack pointer 
+        self.sp = 7
         
 
     def ram_read(self, MAR):
@@ -108,7 +109,12 @@ class CPU:
         HLT = 0b00000001
         LDI = 0b10000010
         PRN = 0b01000111
+        ADD = 0b10100000
         MUL = 0b10100010
+        PUSH = 0b01000101
+        POP = 0b01000110
+        CALL = 0b01010000
+        RET = 0b00010001
         
         running = True
 
@@ -119,8 +125,7 @@ class CPU:
 
             #if HLT
             if IR == HLT:
-                running = False #end the run
-                
+                running = False #end the run 
             
             #if LDI
             elif IR == LDI: #set specified register to specified value
@@ -131,9 +136,53 @@ class CPU:
             elif IR == PRN: #prints the specified value at a register
                 print(self.reg[operand_a])
                 self.pc += 2 #increment to find next instruction
+            
+            elif IR == ADD:
+                self.alu('ADD', operand_a, operand_b)
+                self.pc += 3
 
             elif IR == MUL:
                 #multiply the operands calling the operation from alu
                 self.alu('MUL', operand_a, operand_b)
                 self.pc +=3
-        
+
+            elif IR == PUSH:
+                # push the value in the given register on the stack
+                val = self.reg[operand_a]
+                # decrement the SP
+                self.reg[self.sp] -= 1
+                # store value in memory at SP
+                self.ram[self.reg[self.sp]] = val
+                self.pc += 2
+
+            elif IR == POP:
+                # get the register number
+                # get value out of the register
+                val = self.ram[self.reg[self.sp]]
+                # store value in memory at SP
+                self.reg[operand_a] = val
+                # increment the SP and PC
+                self.reg[self.sp] += 1
+                self.pc += 2
+
+            elif IR == CALL:
+                return_address = self.pc + 2
+                # push if on the stack
+                self.reg[self.sp] -= 1
+                top_of_stack_add = self.reg[self.sp]
+                self.ram[top_of_stack_add] = return_address
+                # set the PC to the subroutine address
+                subroutine_address = self.reg[operand_a]
+                self.pc = subroutine_address
+
+            elif IR == RET:
+                # pop the return address off the stack
+                top_of_stack_add = self.reg[self.sp]
+                return_address = self.ram[top_of_stack_add]
+                self.reg[self.sp] += 1
+                # store in the PC
+                self.pc = return_address
+            else:
+                print(
+                    F" unknown instruction {IR} at address {self.pc}")
+                sys.exit()  
